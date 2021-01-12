@@ -2,7 +2,7 @@
 ## About this project
 This project will improve cruiser maintenance tracking for the Wichita Police department. To better maintain our Wichita Police cruisers, an OBD-II compatible device connects to and monitors each cruiser. The device utilizes a LoRaWAN network within Wichita to send realtime notifications and data through gateways to a central server which can then be displayed on dashboards for the department. In order to utilize the LoRaWAN network, we’ll make use of the Protocol Buffers method of serializing data into small packets. We may divide the data into multiple packets sent periodically to meet the LoRaWAN duty cycle standard. Once the Server group has set up a network server, we’ll work to create a windows application that will display statistics from all cruisers and notify the maintenance department when maintenance is due. 
 ## Pinout
-The pinout for the MKRCAN sheild, Adafruit Feather 32u4, ODB2 connector, and LED are as below.
+The pinout for the MKRCAN sheild, Adafruit Feather 32u4, ODB2 connector, and LED is listed below.
 
 
 | DESC           | MKRCAN | Feather   | ODB2 | LED |

@@ -5,23 +5,18 @@ function Decoder(bytes, port) {
     // (array) of bytes to an object of fields.
     var notification = {};
     
-    // temperature 
   
     rawId = bytes[0] + bytes[1] << 8;
-    
     notification.id = rawId; //nothing to do here. raw value is already correct. 
 
     rawPeakValue = bytes[2] + bytes[3] << 8 + bytes[4] << 16 + bytes[5] << 24;
-    notification.peakValue = 
+    notification.peakValue = sflt322f(rawPeakValue)
 
     rawAverageValue = bytes[6] + bytes[7] << 8 + bytes[8] << 16 + bytes[9] << 24;
-    notification.averageValue = 
+    notification.averageValue = sflt322f(rawAverageValue)
     
-    // humidity 
-    rawHumid = bytes[2] + bytes[3] * 256;
-    notification.humidity = sflt162f(rawHumid) * 100;
-    
-    return decoded;
+
+    return notification;
   }
   
   function sflt322f(rawSflt32)

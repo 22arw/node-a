@@ -3,25 +3,19 @@
 #include <OBD2.h>
 #include <jled.h>
 #include <SPI.h>
-#include <TinyLoRa.h>
-
-// Network Session Key (MSB)
-uint8_t NwkSkey[16] = { 0x19, 0x78, 0xb6, 0x13, 0x87, 0x6b, 0x6b, 0x1a, 0xee, 0xb1, 0x35, 0x65, 0xdd, 0xea, 0x39, 0x73 };
-
-
-// Application Session Key (MSB)
-uint8_t AppSkey[16] = { 0x5f, 0xb2, 0xe3, 0x39, 0xf2, 0x7b, 0x28, 0xcd, 0x93, 0x36, 0x91, 0xf2, 0x00, 0xde, 0xa5, 0x5a };
-
-// Device Address (MSB)
-uint8_t DevAddr[4] = { 0x00, 0x41, 0x23, 0x9a };
-
+#include <RH_RF95.h>
 
 // for Feather32u4 RFM9x
 #define RFM95_CS 8
 #define RFM95_RST 4
 #define RFM95_INT 7
 
-TinyLoRa lora = TinyLoRa(RFM95_INT, RFM95_CS, RFM95_RST);
+// Change to 434.0 or other frequency, must match RX's freq!
+#define RF95_FREQ 915.0
+
+// Singleton instance of the radio driver
+RH_RF95 rf95(RFM95_CS, RFM95_INT);
+
 
 
 const int led_pin_r = 11;
@@ -54,6 +48,9 @@ float read_pid(uint8_t pid){
   }
 }
 
+class Notify {
+  bool add_queue(uint16_t ID, float value_1, float value_2);
+};
 
 //Holds observer settings and observations
 struct Observer {
@@ -167,32 +164,7 @@ class Observe_Class {
 
 Observe_Class observe;
 
-typedef union {
-  unsigned long longFormat;
-  float floatFormat;
-}ByteFloatUnion;
-
 void notify(uint16_t ID, float val1, float val2){
-  unsigned char loraData[10];
-
-  //Store float as long (not the same as casting, as this would round)
-  ByteFloatUnion byteVal1;
-  ByteFloatUnion byteVal2;
-  
-  byteVal1.floatFormat = val1;
-  byteVal2.floatFormat = val2;
-  
-  loraData[0] = lowByte(ID);
-  loraData[1] = highByte(ID);
-  loraData[2] = (byteVal1.longFormat) & 0xff;
-  loraData[3] = (byteVal1.longFormat>>8) & 0xff;
-  loraData[4] = (byteVal1.longFormat>>16) & 0xff;
-  loraData[5] = (byteVal1.longFormat>>24) & 0xff;
-  loraData[6] = (byteVal1.longFormat) & 0xff;
-  loraData[7] = (byteVal1.longFormat>>8) & 0xff;
-  loraData[8] = (byteVal1.longFormat>>16) & 0xff;
-  loraData[9] = (byteVal1.longFormat>>24) & 0xff;
-  
   String str_msg;
   str_msg += (String)ID;
   str_msg += " ";
@@ -201,12 +173,22 @@ void notify(uint16_t ID, float val1, float val2){
   str_msg += (String) val2;
   char message[30];
   str_msg.toCharArray(message,30);
+  Local_TX(message);
   Serial.println(message);
   {
     led = JLed(led_pin_r).Blink(300,300).Repeat(2);
   }
 }
 
+void Local_TX(char message[]){
+    Serial.print("Sending "); Serial.println(message);
+    delay(10);
+    rf95.send((uint8_t *)message, 20);
+
+    delay(10);
+    rf95.waitPacketSent();
+    Serial.print("Sent!");
+}
 
 
 //process string based commands. 
@@ -264,7 +246,23 @@ void get_commands(){
     run_command(command);
   }
 
-  //Commands over LoraWAN not supported.
+  //get array of characters from LoRa if available
+   if (rf95.available())
+  {
+    Serial.print("Got Lora Command: ");
+    // Should be a message for us now
+    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+    uint8_t len = sizeof(buf);
+    if (rf95.recv(buf, &len))
+    {
+      Serial.println((char*)buf);
+    }
+    else
+    {
+      Serial.println("Receive failed");
+    }
+    run_command((char*)buf);
+  }
   
 }
 
@@ -273,21 +271,36 @@ void setup() {
   Serial.begin(9600);
   //while (!Serial);
 
-    // Initialize LoRa
-  Serial.print("Starting LoRa...");
-  // define channel to send data on
-  lora.setChannel(CH2);
-  // set datarate
-  lora.setDatarate(SF7BW125);
-    if(!lora.begin())
-  {
-    Serial.println("Failed");
-    Serial.println("Check your radio");
-    while(true);
-  }
-  Serial.println("LoRa Ready!");
- 
+  //connect to LoRa
+  pinMode(RFM95_RST, OUTPUT);
+  digitalWrite(RFM95_RST, HIGH);
+
+  // manual reset
+  digitalWrite(RFM95_RST, LOW);
+  delay(10);
+  digitalWrite(RFM95_RST, HIGH);
+  delay(10);
+
   
+  while (!rf95.init()) {
+    Serial.println("LoRa radio init failed");
+    Serial.println("Uncomment '#define SERIAL_DEBUG' in RH_RF95.cpp for detailed debug info");
+    while (1);
+  }
+  Serial.println("LoRa radio init OK!");
+
+
+  // Defaults after init are 434.0MHz, modulation GFSK_Rb250Fd250, +13dbM
+  if (!rf95.setFrequency(RF95_FREQ)) {
+    Serial.println("setFrequency failed");
+    while (1);
+  }
+  Serial.print("Set Freq to: "); Serial.println(RF95_FREQ);
+
+  rf95.setTxPower(23, false);
+  
+
+
   //connect to can
   while (true) {
     Serial.print(F("Attempting to connect to OBD2 CAN bus ... "));

@@ -6,17 +6,17 @@ function Decoder(bytes, port) {
     var notification = {};
     
   
-    rawId = bytes[0] + bytes[1] << 8;
+    rawId = bytes[0] + (bytes[1] << 8);
     notification.id = rawId; //nothing to do here. raw value is already correct. 
 
-    rawPeakValue = bytes[2] + bytes[3] << 8 + bytes[4] << 16 + bytes[5] << 24;
+    rawPeakValue = bytes[2] + (bytes[3] << 8) + (bytes[4] << 16) + (bytes[5] << 24);
     notification.peakValue = sflt322f(rawPeakValue)
 
-    rawAverageValue = bytes[6] + bytes[7] << 8 + bytes[8] << 16 + bytes[9] << 24;
+    rawAverageValue = bytes[6] + (bytes[7] << 8) + (bytes[8] << 16) + (bytes[9] << 24);
     notification.averageValue = sflt322f(rawAverageValue)
     
 
-    return notification;
+    return notification;S
   }
   
   function sflt322f(rawSflt32)

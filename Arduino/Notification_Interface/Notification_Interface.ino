@@ -182,16 +182,16 @@ void notify(uint16_t ID, float val1, float val2){
   byteVal1.floatFormat = val1;
   byteVal2.floatFormat = val2;
   
-  loraData[0] = lowByte(ID);
-  loraData[1] = highByte(ID);
+  loraData[0] = lowByte(ID); //0A
+  loraData[1] = highByte(ID); //00
   loraData[2] = (byteVal1.longFormat) & 0xff;
   loraData[3] = (byteVal1.longFormat>>8) & 0xff;
   loraData[4] = (byteVal1.longFormat>>16) & 0xff;
   loraData[5] = (byteVal1.longFormat>>24) & 0xff;
-  loraData[6] = (byteVal1.longFormat) & 0xff;
-  loraData[7] = (byteVal1.longFormat>>8) & 0xff;
-  loraData[8] = (byteVal1.longFormat>>16) & 0xff;
-  loraData[9] = (byteVal1.longFormat>>24) & 0xff;
+  loraData[6] = (byteVal2.longFormat) & 0xff;
+  loraData[7] = (byteVal2.longFormat>>8) & 0xff;
+  loraData[8] = (byteVal2.longFormat>>16) & 0xff;
+  loraData[9] = (byteVal2.longFormat>>24) & 0xff;
  
   lora.sendData(loraData, sizeof(loraData), lora.frameCounter);
   lora.frameCounter++;
@@ -291,14 +291,14 @@ void setup() {
  
   
   //connect to can
-  while (true) {
+  while (false) {
     Serial.print(F("Attempting to connect to OBD2 CAN bus ... "));
     CAN.setPins(6,2);
     if (!OBD2.begin()) {
       Serial.println(F("failed!"));
       delay(1000);
     } 
-    else {2
+    else {
       led = JLed(led_pin_b).On();
       led.Update();
       Serial.println(F("success"));
@@ -313,8 +313,8 @@ void loop() {
   //get_commands();
   //led.Update();
   //observe.update();
-  float val1 = 0.123;
-  float val2 = 0.456;
+  float val1 = 0.0000000001;
+  float val2 = 100002;
   int ID = 10;
   notify(ID, val1, val2);
   delay(20000);

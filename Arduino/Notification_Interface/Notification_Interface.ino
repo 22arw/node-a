@@ -36,7 +36,7 @@ unsigned long lastTime;
 const int MAX_OBSERVERS = 10;
 
 //int i = 0;
-//bool flip = false;
+//bool flip = false;  
 //float read_pid(uint8_t PID){
 //  if(!flip) i++;
 //  else i --;
@@ -192,7 +192,9 @@ void notify(uint16_t ID, float val1, float val2){
   loraData[7] = (byteVal1.longFormat>>8) & 0xff;
   loraData[8] = (byteVal1.longFormat>>16) & 0xff;
   loraData[9] = (byteVal1.longFormat>>24) & 0xff;
-  
+ 
+  lora.sendData(loraData, sizeof(loraData), lora.frameCounter);
+  lora.frameCounter++;
   String str_msg;
   str_msg += (String)ID;
   str_msg += " ";
@@ -296,7 +298,7 @@ void setup() {
       Serial.println(F("failed!"));
       delay(1000);
     } 
-    else {
+    else {2
       led = JLed(led_pin_b).On();
       led.Update();
       Serial.println(F("success"));
@@ -308,7 +310,12 @@ void setup() {
 
 //main loop
 void loop() {
-  get_commands();
-  led.Update();
-  observe.update();
+  //get_commands();
+  //led.Update();
+  //observe.update();
+  float val1 = 0.123;
+  float val2 = 0.456;
+  int ID = 10;
+  notify(ID, val1, val2);
+  delay(20000);
 }

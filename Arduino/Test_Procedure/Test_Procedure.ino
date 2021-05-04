@@ -14,6 +14,8 @@
 TinyLoRa lora = TinyLoRa(RFM95_INT, RFM95_CS, RFM95_RST);
 Adafruit_FRAM_I2C fram     = Adafruit_FRAM_I2C();
 
+int pushButton = A0;
+
 const int led_pin_r = 9;
 const int led_pin_g = 11; 
 const int led_pin_b = 10;
@@ -148,13 +150,29 @@ void test_led(){
   
   
 }
-
+int buttonState;
+int lastButtonState;
 void setup() {
   //Start serial with 9600 baud
   Serial.begin(9600);
+  
+  pinMode(pushButton, INPUT_PULLUP);
+  buttonState = digitalRead(pushButton);
+  lastButtonState = buttonState;
 }
 
 void loop() {
+  buttonState = digitalRead(pushButton);
+  if(buttonState!=lastButtonState){
+    if(buttonState==1){
+      Serial.println("Button released");
+    }
+    if(buttonState==0){
+      Serial.println("Button pushed");
+    }
+    lastButtonState = buttonState;
+  }
+  
   while(Serial.available()>0){
     switch(Serial.read()) {
       case 'l':
